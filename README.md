@@ -7,7 +7,6 @@
 <p align="center">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
-  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" />
   <img src="https://img.shields.io/badge/UFMG-C8102E?style=for-the-badge" />
 </p>
 
@@ -16,9 +15,8 @@
   <a href="#arquitetura">Arquitetura</a> •
   <a href="#pre-requisitos">Pré-requisitos</a> •
   <a href="#setup">Setup</a> •
-  <a href="#fluxo-etl">Fluxo ETL</a> •
-  <a href="#proveniencia">Proveniência</a> • 
-  <a href="#colaboradores">Colaboradores</a>
+  <a href="#dados">Dados</a> •
+  <a href="#proveniencia">Proveniência</a> 
 </p>
 
 <p align="center">
@@ -37,57 +35,67 @@ O laboratório permite analisar a jornada da informação desde a notificação 
 
 <h2 id="arquitetura">🏗️ Arquitetura e Tecnologias</h2>
 
-A arquitetura do projeto é dividida em duas camadas principais:
+A arquitetura do projeto é organizada em um único container autosuficiente, que inclui:
 
-- **Orquestração de Banco (Node-pg-migrate):** Gerenciamento de migrações (DDL) e carga de dados (DML), garantindo que a extensão **ProvSQL** seja ativada corretamente nas tabelas criadas.
-- **Ambiente Docker (PostgreSQL/GProM):** Container customizado que compila o seletor de proveniência **GProM** sobre uma instância de PostgreSQL já preparada com **ProvSQL**.
+- **PostgreSQL com ProvSQL:** Banco de dados já configurado com a extensão de proveniência.
+
+- **GProM:** Middleware de proveniência compilado e pronto para consultas de rastreabilidade.
+
+- **Logs e Rotação:** Todos os logs (`provsql.log` e `migrations.log`) são gravados dentro do container e rotacionados automaticamente via `logrotate`.
+
+> 💡 Toda a orquestração e execução das migrações são feitas internamente pelo container, sem necessidade de ferramentas externas.
 
 ---
 
-<h2 id="pre-requisitos">📋 Pré-requisitos e Repositórios</h2>
+<h2 id="pre-requisitos">📋 Pré-requisitos</h2>
 
 ### 🛠️ Ferramentas Necessárias
 
-Para compilar e executar o laboratório, você precisará instalar:
+Para rodar o ProvLab **não é necessário instalar nada além do Docker e Docker Compose**. Todo o ambiente é construído e executado dentro do container.
 
-| Ferramenta  | Link de Download                                                    | Finalidade                                              |
-| :---------- | :------------------------------------------------------------------ | :------------------------------------------------------ |
-| **Node.js** | [👉 Baixar Node.js](https://nodejs.org/)                            | Execução do ambiente de migrações e scripts.            |
-| **Docker**  | [👉 Baixar Docker](https://www.docker.com/products/docker-desktop/) | Conteinerização do banco e ferramentas de proveniência. |
-
-### 📚 Bibliotecas de Proveniência
-
-Este laboratório integra as seguintes ferramentas de código aberto:
-
-- **ProvSQL:** Extensão para PostgreSQL que adiciona suporte a proveniência de dados.
-  - [🔗 Repositório Oficial ProvSQL](https://github.com/InriaValda/provsql)
-- **GProM (Database Provenance Middleware):** Sistema que permite extrair proveniência de consultas SQL através de reescrita de query.
-  - [🔗 Repositório Oficial GProM](https://github.com/IITDBGroup/gprom)
+| Ferramenta | Link de Download                                                    | Finalidade                                              |
+| :--------- | :------------------------------------------------------------------ | :------------------------------------------------------ |
+| **Docker** | [👉 Baixar Docker](https://www.docker.com/products/docker-desktop/) | Conteinerização do banco e ferramentas de proveniência. |
 
 ---
 
 <h2 id="setup">🛠️ Setup do Ambiente</h2>
 
-### ⚙️ Executando o Laboratório
+### ⚙️ Executando o Laboratório com Docker
 
 1. **Clone o repositório:**
-   ```bash
-   git clone https://github.com/alexbeldam/prov-lab.git
-   cd prov-lab
-   ```
-2. **Configure o ambiente de dados:**
-   - **Linux/macOS:** Dê permissão de execução e execute:
 
-   ```bash
-   chmod +x setup.sh
-   ./setup.sh
-   ```
+```bash
+git clone https://github.com/alexbeldam/prov-lab.git
+cd prov-lab
+```
 
-   - **Windows:** Execute o script no diretório raiz:
+2. **Suba o container ProvLab:**
 
-   ```bash
-   ./setup.bat
-   ```
+```bash
+docker-compose up -d
+```
+
+- Isso cria o container `provlab` com PostgreSQL, ProvSQL e GProM já compilados e prontos para uso.
+- Os logs do laboratório ficam em `./logs` no host, persistindo informações de execução.
+
+3. **Verifique se o container está rodando:**
+
+```bash
+docker ps
+```
+
+4. **Acesse o terminal interativo do ProvSQL:**
+
+```bash
+docker-compose exec provlab provsql
+```
+
+5. **Acesse o terminal do GProM para consultas de proveniência:**
+
+```bash
+docker-compose exec provlab gprom
+```
 
 ---
 
@@ -123,44 +131,39 @@ Essa separação garante **reprodutibilidade, rastreabilidade e clareza na prove
 
 <h2 id="fluxo-etl">🧹 Fluxo de Dados e Tipagem</h2>
 
-Para garantir a precisão das ferramentas de proveniência, o projeto utiliza uma **Tipagem Estrita** centralizada:
+Para garantir a precisão das ferramentas de proveniência, o projeto utiliza uma Tipagem Estrita centralizada:
 
-- **Schemas Únicos:** As definições em definitions/schemas.js regem tanto a criação das tabelas no banco quanto a formatação dos valores no dump gerado pelo Python.
+- **Schemas Derivados de SQL:**  
+  As definições das tabelas vêm da migration `migrations/01_create_tables.sql`. O script Python lê essas definições e gera os arquivos de seed (`02_seed_sim.sql` e `03_seed_sinan.sql`), garantindo que os tipos de dados estejam consistentes entre o banco e o dump.
 
-- **Tipos Mapeados:**
-  - **int8/int4:** Para códigos de categorias, IDs de município e unidades de medida.
-  - **date:** Para datas de notificação, ocorrência e óbito.
-  - **float8:** Para coordenadas geográficas e áreas.
-  - **text:** Para nomes, descrições nominais e códigos CID-10.
+- **Tipos Mapeados no Python:**
+
+| SQL Type         | Python Type | Observação                               |
+| ---------------- | ----------- | ---------------------------------------- |
+| BIGINT, INTEGER  | int         | IDs, códigos, quantidades                |
+| DATE, TEXT       | str         | Datas, nomes, descrições, códigos CID-10 |
+| DOUBLE PRECISION | float       | Coordenadas geográficas, áreas           |
+
+Dessa forma, o fluxo ETL mantém integridade e consistência de tipos entre os DBFs, os seeds gerados e o banco PostgreSQL com ProvSQL.
 
 ---
 
 <h2 id="proveniencia">🔍 Testando a Proveniência</h2>
 
-Uma vez que o ambiente esteja configurado, você pode acessar as ferramentas de proveniência diretamente via CLI utilizando os scripts customizados do package.json.
+Uma vez que o ambiente esteja configurado, você pode acessar as ferramentas de proveniência diretamente via CLI utilizando os scripts do container.
 
-> Nota: Caso os containers ainda não estejam ativos, certifique-se de rodar `pnpm docker:start` antes de iniciar as ferramentas interativas.
-
-⌨️ **Acesso às Ferramentas**
+### ⌨️ Acesso às Ferramentas
 
 Para rodar o terminal interativo do ProvSQL:
 
 ```bash
-# Inicie o container se necessário
-pnpm docker:start
-
-# Acesse o terminal ProvSQL
-pnpm provsql
+docker-compose exec provlab provsql
 ```
 
 Para executar comandos via GProM:
 
 ```bash
-# Inicie o container se necessário
-pnpm docker:start
-
-# Acesse o terminal ProvSQL
-pnpm pgprom
+docker-compose exec provlab gprom
 ```
 
 ---
