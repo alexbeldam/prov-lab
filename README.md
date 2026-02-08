@@ -73,7 +73,7 @@ cd prov-lab
 2. **Suba o container ProvLab:**
 
 ```bash
-docker-compose up -d
+docker-compose up -d --build
 ```
 
 - Isso cria o container `provlab` com PostgreSQL, ProvSQL e GProM já compilados e prontos para uso.
