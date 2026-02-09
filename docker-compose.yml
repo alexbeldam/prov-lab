@@ -3,14 +3,13 @@ services:
     build: .
     image: provlab
     container_name: provlab
+    hostname: provlab
     ports:
       - "54321:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=admin
       - POSTGRES_DB=postgres
-    volumes:
-      - ./logs:/var/log/provlab
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s

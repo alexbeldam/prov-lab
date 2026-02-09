@@ -7,6 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/Flyway-4D4D4D?style=for-the-badge&logo=flyway&logoColor=white" />
   <img src="https://img.shields.io/badge/UFMG-C8102E?style=for-the-badge" />
 </p>
 
@@ -37,11 +38,11 @@ O laboratório permite analisar a jornada da informação desde a notificação 
 
 A arquitetura do projeto é organizada em um único container autosuficiente, que inclui:
 
+- **Flyway:** Ferramenta de migração do banco de dados.
+
 - **PostgreSQL com ProvSQL:** Banco de dados já configurado com a extensão de proveniência.
 
 - **GProM:** Middleware de proveniência compilado e pronto para consultas de rastreabilidade.
-
-- **Logs e Rotação:** Todos os logs (`provsql.log` e `migrations.log`) são gravados dentro do container e rotacionados automaticamente via `logrotate`.
 
 > 💡 Toda a orquestração e execução das migrações são feitas internamente pelo container, sem necessidade de ferramentas externas.
 
@@ -77,7 +78,6 @@ docker-compose up -d
 ```
 
 - Isso cria o container `provlab` com PostgreSQL, ProvSQL e GProM já compilados e prontos para uso.
-- Os logs do laboratório ficam em `./logs` no host, persistindo informações de execução.
 
 3. **Verifique se o container está rodando:**
 

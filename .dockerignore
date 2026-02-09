@@ -1,0 +1,27 @@
+# Git
+.git
+.gitignore
+
+# Docs
+README.md
+LICENSE
+
+docker-compose.yml
+
+# Logs
+logs/
+*.log
+
+data/
+scripts/
+
+# Editor
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Cache
+*.tmp
+*.cache
