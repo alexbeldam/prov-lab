@@ -2,6 +2,9 @@
 
 CREATE EXTENSION IF NOT EXISTS provsql CASCADE;
 
+ALTER ROLE postgres 
+SET search_path TO public, provsql, postgres;
+
 DO $$
 BEGIN
   PERFORM provsql.add_provenance('sim');
